@@ -1,5 +1,5 @@
 # Daniels-Home-Assistant-Automations
-An Overview of some of the Automations I developed
+An overview of some of the automations I developed using [Home Assistant](https://github.com/home-assistant/core)
 ###
 Inside each file is a `template_sensors.yaml` which is broken out of a main file called `templates.yaml` in home assistant where template sensors go.
 ###
