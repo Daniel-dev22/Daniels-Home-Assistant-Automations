@@ -1,0 +1,34 @@
+alias: Master Shades Control
+sequence:
+  - repeat:
+      count: "{{ iif(room == 'first_floor',2,1) }}"
+      sequence:
+        - service: cover.set_cover_position
+          data:
+            position: "{{ position }}"
+          target:
+            entity_id: "{{ lists[room] | join(',') }}"
+  - condition: template
+    value_template: "{{ room != 'master_bedroom_sun' }}"
+  - service: input_boolean.turn_{{ set_boolean }}
+    data: {}
+    target:
+      entity_id: "{{ input_boolean }}"
+variables:
+  lists:
+    daniels_open:
+      - cover.bathroom_shade_window_covering
+      - cover.bedroom_shade_1_window_covering
+      - cover.bedroom_shade_2_window_covering
+    daniels_close:
+      - cover.bedroom_shades
+      - cover.bathroom_shade_window_covering
+    master_bedroom:
+      - cover.master_bedroom_shades
+    master_bedroom_sun:
+      - cover.master_bedroom_shade_6
+      - cover.master_bedroom_shade_7
+    first_floor:
+      - cover.first_floor_shades
+mode: parallel
+max: 4

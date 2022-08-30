@@ -1,0 +1,28 @@
+- sensor:
+  - unique_id: First_Floor_Open_Shades_Condition
+    name: "First Floor Open Shades Condition"
+    state: "{{ (states('sensor.downstairs_shades_multisensor_illuminance') | float(0) > 80) and states('sensor.downstairs_shades_multisensor_illuminance') not in ['unavailable','unknown'] }}"
+- sensor:
+  - unique_id: First_Floor_Close_Shades_Condition
+    name: "First Floor Close Shades Condition"
+    state: "{{ (states('sensor.upstairs_shades_multisensor_illuminance') | float(0) < 60) and states('sensor.upstairs_shades_multisensor_illuminance') not in ['unavailable','unknown'] }}"
+- sensor:
+  - unique_id: Upstairs_Open_Shades_Condition
+    name: "Upstairs Open Shades Condition"
+    state: "{{ (states('sensor.upstairs_shades_multisensor_illuminance') | float(0) > 120) and states('sensor.upstairs_shades_multisensor_illuminance') not in ['unavailable','unknown'] }}"
+- sensor:
+  - unique_id: Upstairs_Close_Shades_Condition
+    name: "Upstairs Close Shades Condition"
+    state: "{{ (states('sensor.upstairs_shades_multisensor_illuminance') | float(0) < 100) and states('sensor.upstairs_shades_multisensor_illuminance') not in ['unavailable','unknown'] }}"
+- sensor:
+  - unique_id: Daniels_Shades_Last_Updated
+    name: "Daniels Shades Last Updated"
+    state: "{{ (now() - states.input_boolean.daniels_shades_status.last_updated).seconds > 3600 }}"
+- sensor:
+  - unique_id: Master_Bedroom_Shades_Last_Updated
+    name: "Master Bedroom Shades Last Updated"
+    state: "{{ (now() - states.input_boolean.master_bedroom_shades_status.last_updated).seconds > 3600 }}"
+- sensor:
+  - unique_id: First_Floor_Shades_Last_Updated
+    name: "First Floor Shades Last Updated"
+    state: "{{ (now() - states.input_boolean.First_Floor_shades_status.last_updated).seconds > 3600 }}"

@@ -1,0 +1,90 @@
+alias: Daniels Shades
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.upstairs_open_shades_condition
+      - sensor.upstairs_close_shades_condition
+    from: "False"
+    to: "True"
+    for:
+      minutes: 5
+    id: Shade Sensors
+  - platform: state
+    entity_id:
+      - sensor.daniels_shades_last_updated
+    from: "False"
+    to: "True"
+  - platform: state
+    entity_id:
+      - input_boolean.daniel_away
+      - input_boolean.all_away
+    id: Away Mode
+  - platform: event
+    event_type: automation_reloaded
+  - platform: state
+    entity_id:
+      - binary_sensor.homeassistant_restart_delayed_trigger
+    from: "off"
+    to: "on"
+  - platform: time
+    at: "07:30:00"
+  - platform: time
+    at: "18:30:00"
+    id: Close
+condition:
+  - condition: template
+    value_template: "{{ condition}}"
+action:
+  - delay:
+      hours: 0
+      minutes: >-
+        {{ iif(trigger.id != 'Shade Sensors' and trigger.id != 'Close' and
+        trigger.id != 'Away Mode',5,0) }}
+      seconds: 0
+      milliseconds: 0
+  - condition: template
+    value_template: >-
+      {{ trigger.id == 'Shade Sensors' or trigger.id == 'Close' or trigger.id ==
+      'Away Mode' or trigger.id != 'Shade Sensors' and states(select_sensor) ==
+      'True' and (now() - states[select_sensor].last_updated).seconds > 240 }}
+  - service: script.master_shades_control
+    data:
+      room: "{{ iif(set_boolean == 'on','daniels_open','daniels_close') }}"
+      position: "{{ iif(set_boolean == 'on',100,0) }}"
+      set_boolean: "{{ set_boolean }}"
+      input_boolean: input_boolean.daniels_shades_status
+variables:
+  trigger_sensors: >-
+    {{ ['sensor.upstairs_open_shades_condition',
+    'sensor.upstairs_close_shades_condition'] }}
+  select_sensor: >-
+    {{ expand (trigger_sensors) | selectattr('state', 'eq', 'True') |
+    map(attribute='entity_id') | list | join(',') }}
+  input_boolean: "{{ states('input_boolean.daniels_shades_status') }}"
+  set_boolean: >-
+    {% if trigger.id == 'Close'  or trigger.id == 'Away Mode'  and
+    trigger.to_state.state == 'on' %} off {% elif
+    states('sensor.upstairs_open_shades_condition') == 'True' or trigger.id ==
+    'Away Mode'  and trigger.to_state.state == 'off' and
+    states('input_boolean.daniel_away') == 'off' and
+    states('input_boolean.all_away') == 'off' %} on {% elif
+    states('sensor.upstairs_close_shades_condition') == 'True' %} off  {% elif
+    trigger.id == 'Away Mode' and trigger.to_state.state == 'on' %} off {% endif
+    %}
+  condition: >-
+    {% set open =  (select_sensor == 'sensor.upstairs_open_shades_condition' and
+    states('sensor.daniels_shades_last_updated') == 'True' and states
+    ('binary_sensor.shades_system_uptime') == 'off' or select_sensor ==
+    'sensor.upstairs_open_shades_condition' and
+    states('sensor.daniels_shades_last_updated') == 'False' and states
+    ('binary_sensor.shades_system_uptime') == 'on') and input_boolean == 'off'
+    and not (now() >= today_at('18:30') or now() <= today_at('05:30')) %} {% set
+    close = trigger.id == 'Close' or trigger.id == 'Away Mode' or select_sensor
+    == 'sensor.upstairs_close_shades_condition' and input_boolean == 'on' %} {%
+    set katelyn = set_boolean == 'on' and states('person.katelyn') != 'Home' or
+    set_boolean == 'on' and states('person.katelyn') == 'Home' and (now() >=
+    today_at('07:30')) %} {% set away_mode = states('input_boolean.daniel_away')
+    == 'off' and states('input_boolean.all_away') == 'off' %} {{ away_mode and
+    input_boolean != set_boolean and open and katelyn or close and input_boolean
+    != set_boolean }} 
