@@ -1,0 +1,34 @@
+alias: First Floor Thermostat Schedule
+description: ""
+trigger:
+  - platform: state
+    entity_id:
+      - sensor.summer_first_floor_thermostat_schedule
+      - sensor.winter_first_floor_thermostat_schedule
+  - platform: time_pattern
+    minutes: /5
+  - platform: template
+    value_template: "{{ states('climate.first_floor') != 'off' }}"
+condition:
+  - condition: template
+    value_template: >-
+      {{ states(condition) not in ['unavailable', 'unknown'] and
+      states('climate.first_floor') != 'off' }}
+action:
+  - service: script.master_thermostat_schedule
+    data:
+      input_boolean: input_boolean.first_floor_threshold_control
+      input_number: input_number.first_floor_scheduled_temperature
+      thermostat: climate.first_floor
+      schedule: >-
+        {% if states('climate.first_floor') == 'cool' %}
+        sensor.summer_first_floor_thermostat_schedule {% elif
+        states('climate.first_floor') == 'heat' %}
+        sensor.winter_first_floor_thermostat_schedule {% endif %}
+mode: single
+variables:
+  condition: >-
+    {% if states('climate.first_floor') == 'cool' %}
+    sensor.summer_first_floor_thermostat_schedule  {% elif
+    states('climate.first_floor') == 'heat' %}
+    sensor.winter_first_floor_thermostat_schedule  {% endif %}
