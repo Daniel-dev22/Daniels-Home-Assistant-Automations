@@ -1,0 +1,33 @@
+alias: Master Lights Script
+sequence:
+  - service: light.turn_{{ set_light }}
+    target:
+      entity_id: '{{ target_lights }}'
+    data: '{{ light_setting }}'
+mode: parallel
+variables:
+  set_color_temp:
+    Day: 4500
+    Night: 2500
+    8pm: 2500
+    After9pm: 2500
+  set_brightness: 
+    Day: 100
+    Night: 50
+    8pm: 25
+    After9pm: 20
+  light_setting: >-
+    {% set ns = namespace(fields=[]) %} 
+    {% if set_light == 'on' and automation_override_set_color_name is not defined %}     
+    {% set ns.fields = ns.fields + [ ('kelvin', automation_override_set_color_temp | default(set_color_temp[mode])) ] %}
+    {% endif %} 
+    {% if set_light == 'on' %}
+    {% set ns.fields = ns.fields + [ ('brightness_pct', automation_override_set_brightness | default(set_brightness[mode])) ] %}
+    {% endif %} 
+    {% if set_light == 'on' and automation_override_set_color_name is defined %}
+    {% set ns.fields = ns.fields + [ ('color_name', automation_override_set_color_name | default('red')) ] %}
+    {% endif %} 
+    {% if set_light == 'off' %}
+    {% set ns.fields = ns.fields + [ ('transition', automation_override_set_transition | default(5)) ] %}
+    {% endif %} 
+    {{ dict.from_keys(ns.fields) }}
