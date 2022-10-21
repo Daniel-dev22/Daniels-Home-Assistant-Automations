@@ -1,0 +1,42 @@
+alias: Example Light Switch Control Automation
+description: ""
+trigger:
+  - platform: time
+    at: "18:30:00"
+condition:
+  - condition: template
+    value_template: "{{ trigger.platform != 'time' or trigger.platform == 'time' and lights_status == 'on' }}"
+action:
+  - service: script.master_lights_script
+    data: "{{ passed_data }}"
+mode: single
+variables:
+  lights_status: "{{ states('light.master_bedroom_lights') }}"
+  set_light: >-
+    {% if lights_status == 'off' or (trigger.platform == 'time' or true) and lights_status == 'on' %} 
+    on 
+    {% elif lights_status == 'on' %} 
+    off 
+    {% endif %}
+  mode: >-
+    {% if true %}
+    Day
+    {% elif trigger.platform == 'time' %}
+    Night
+    {% elif (now() >= today_at('05:50') and now() <= today_at('18:30')) %} 
+    Day 
+    {% elif (now() >= today_at('18:30') or now() <= today_at('05:50')) %}  
+    Night 
+    {% endif %}
+  passed_data: >-
+    {% set ns = namespace(fields=[]) %}  
+    {% set ns.fields = ns.fields + [('target_lights', 'light.master_bedroom_lights') ] %} 
+    {% set ns.fields = ns.fields + [ ('set_light', set_light) ] %} 
+    {% set ns.fields = ns.fields + [('mode', mode) ] %} 
+    {% if set_light == 'on' and mode != 'Day' %} 
+    {% set ns.fields = ns.fields + [ ('automation_override_set_color_name', 'red' | default('red')) ] %} 
+    {% endif %}  
+    {% if set_light == 'on' and mode != 'Day' %} 
+    {% set ns.fields = ns.fields + [ ('automation_override_set_brightness', 25 | default(50)) ] %} 
+    {% endif %}  
+    {{ dict.from_keys(ns.fields) }}
